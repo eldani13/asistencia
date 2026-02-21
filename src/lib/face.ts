@@ -20,7 +20,10 @@ export const loadFaceModels = async () => {
 
 export const getDescriptorFromVideo = async (video: HTMLVideoElement) => {
   const detection = await faceapi
-    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 }))
+    .detectSingleFace(
+      video,
+      new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })
+    )
     .withFaceLandmarks()
     .withFaceDescriptor();
 

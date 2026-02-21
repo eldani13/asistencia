@@ -13,6 +13,8 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scanStartedAtRef = useRef<number | null>(null);
+  const scanAttemptsRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<{
     tone: "success" | "error" | "warning" | "info";
@@ -32,7 +34,13 @@ export default function ScanPage() {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("Camara no disponible. Usa HTTPS o un navegador compatible.");
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user",
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+      },
+    });
     streamRef.current = stream;
     videoRef.current.srcObject = stream;
     await videoRef.current.play();
@@ -41,6 +49,8 @@ export default function ScanPage() {
   const stopCamera = () => {
     intervalRef.current && clearInterval(intervalRef.current);
     intervalRef.current = null;
+    scanStartedAtRef.current = null;
+    scanAttemptsRef.current = 0;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -93,11 +103,31 @@ export default function ScanPage() {
         return;
       }
 
+      scanStartedAtRef.current = Date.now();
+      scanAttemptsRef.current = 0;
+
       intervalRef.current = setInterval(async () => {
         if (!videoRef.current) return;
+        if (scanStartedAtRef.current && Date.now() - scanStartedAtRef.current > 12000) {
+          setBanner({
+            tone: "warning",
+            title: "No se detecto rostro",
+            message: "Intenta acercarte a la camara y mejorar la luz.",
+          });
+          stopCamera();
+          return;
+        }
+
         const descriptor = await getDescriptorFromVideo(videoRef.current);
         if (!descriptor) {
-          setBanner({ tone: "info", title: "Buscando rostro", message: "Mira a la camara." });
+          scanAttemptsRef.current += 1;
+          if (scanAttemptsRef.current % 4 === 0) {
+            setBanner({
+              tone: "info",
+              title: "Buscando rostro",
+              message: "Mira al frente y mantente quieto.",
+            });
+          }
           return;
         }
 
@@ -136,7 +166,7 @@ export default function ScanPage() {
         }
 
         stopCamera();
-      }, 1200);
+      }, 400);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Camara no disponible";
       setBanner({
