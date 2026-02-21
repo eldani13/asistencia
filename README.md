@@ -1,34 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Asistencia QR + Face
 
-## Getting Started
+Sistema de control de asistencia 100% frontend con Next.js App Router, Firebase y reconocimiento facial.
 
-First, run the development server:
+## Requisitos
+
+- Node.js 20+
+- Proyecto Firebase con Auth, Firestore y Storage habilitados
+
+## Configuracion
+
+1. Copia `.env.local.example` a `.env.local` y completa las variables de Firebase.
+2. Descarga los modelos de face-api.js y colocalos en `public/models`.
+3. Crea el primer admin en Firebase Auth y agrega su perfil en Firestore.
+
+### Documento admin inicial
+
+Coleccion `admins`, documento con ID = UID del usuario admin:
+
+```json
+{
+	"uid": "UID_DEL_ADMIN",
+	"email": "admin@colegio.com",
+	"role": "admin",
+	"createdAt": "timestamp"
+}
+```
+
+## Reglas Firestore
+
+Aplica las reglas en `firestore.rules` y los indices en `firestore.indexes.json`.
+
+## Comandos
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rutas principales
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/` Inicio
+- `/scan` Flujo de asistencia por QR + rostro
+- `/login` Acceso admin
+- `/admin` Panel administrativo
