@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { AdminView } from "@/components/admin/AdminSidebar";
 import Link from "next/link";
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminsCard } from "@/components/admin/AdminsCard";
 import { AsistenciasSection } from "@/components/admin/AsistenciasSection";
+import { DashboardSection } from "@/components/admin/DashboardSection";
 import { ProfesoresCard } from "@/components/admin/ProfesoresCard";
+import { ProfesoresListSection } from "@/components/admin/ProfesoresListSection";
 import { RegistrarRostroCard } from "@/components/admin/RegistrarRostroCard";
 import { ReportesSection } from "@/components/admin/ReportesSection";
 import { useAuth } from "@/components/AuthProvider";
@@ -29,18 +33,12 @@ import Swal from "sweetalert2";
 
 export default function AdminPage() {
   const { signOut, adminProfile } = useAuth();
+  const profesoresPageSize = 6;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeView, setActiveView] = useState<
-    | "dashboard"
-    | "registrar-profesor"
-    | "lista-profesores"
-    | "registrar-rostros"
-    | "crear-admin"
-    | "asistencias"
-    | "reportes"
-  >("dashboard");
+  const [activeView, setActiveView] = useState<AdminView>("dashboard");
   const [profesores, setProfesores] = useState<Profesor[]>([]);
+  const [profesoresPage, setProfesoresPage] = useState(1);
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
   const [reportAsistencias, setReportAsistencias] = useState<Asistencia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,6 +146,20 @@ export default function AdminPage() {
       asistenciasHoy,
     };
   }, [asistencias.length, profesores]);
+
+  const profesoresPagination = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(profesores.length / profesoresPageSize));
+    const safePage = Math.min(profesoresPage, totalPages);
+    const start = (safePage - 1) * profesoresPageSize;
+    const items = profesores.slice(start, start + profesoresPageSize);
+    return { items, totalPages, page: safePage };
+  }, [profesores, profesoresPage, profesoresPageSize]);
+
+  useEffect(() => {
+    if (profesoresPage !== profesoresPagination.page) {
+      setProfesoresPage(profesoresPagination.page);
+    }
+  }, [profesoresPage, profesoresPagination.page]);
 
   const topProfesores = useMemo(() => {
     return [...reporteRows]
@@ -392,249 +404,16 @@ export default function AdminPage() {
             aria-label="Cerrar menu"
           />
         ) : null}
-        <aside
-          className={`fixed inset-y-0 left-0 z-40 flex h-screen -translate-x-full flex-col border-r border-white/10 bg-slate-950/90 p-6 shadow-2xl transition-transform lg:translate-x-0 ${
-            sidebarCollapsed ? "w-64 lg:w-20" : "w-64"
-          } ${sidebarOpen ? "translate-x-0" : ""}`}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-amber-300">
-                AD
-              </div>
-              <div className={sidebarCollapsed ? "lg:hidden" : ""}>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
-                  Admin
-                </p>
-                <p className="text-xs text-slate-300">{adminProfile?.email}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="rounded-full border border-white/20 p-2 text-slate-100 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-              aria-label="Cerrar menu"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M6 6l12 12" />
-                <path d="M18 6l-12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="mt-6 hidden items-center gap-2 lg:flex">
-            <button
-              type="button"
-              className="rounded-full border border-white/20 p-2 text-slate-100"
-              onClick={() => setSidebarCollapsed((prev) => !prev)}
-              aria-label={sidebarCollapsed ? "Expandir barra" : "Colapsar barra"}
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {sidebarCollapsed ? <path d="M9 18l6-6-6-6" /> : <path d="M15 18l-6-6 6-6" />}
-              </svg>
-            </button>
-            <span className={`text-xs text-slate-400 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-              {sidebarCollapsed ? "" : "Barra"}
-            </span>
-          </div>
-
-          <nav className="mt-8 flex flex-1 flex-col gap-6 text-sm text-slate-200">
-            <div className="space-y-2">
-              <p className={`text-[11px] uppercase tracking-[0.4em] text-slate-500 ${
-                sidebarCollapsed ? "lg:hidden" : ""
-              }`}>
-                General
-              </p>
-              {[{ id: "dashboard", label: "Dashboard" }].map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveView(item.id as "dashboard");
-                    setSidebarOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2 text-left transition hover:border-white/30 hover:bg-white/5 lg:justify-start ${
-                    activeView === item.id
-                      ? "border-amber-300/60 bg-amber-300/10 text-amber-200"
-                      : "border-white/10"
-                  } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0 lg:border-transparent lg:bg-transparent" : ""}`}
-                >
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/10 ${
-                    activeView === item.id ? "border-amber-300/40 bg-amber-300/10" : ""
-                  }`}>
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 13h8V3H3v10z" />
-                      <path d="M13 21h8v-6h-8v6z" />
-                      <path d="M13 3h8v8h-8z" />
-                      <path d="M3 21h8v-4H3v4z" />
-                    </svg>
-                  </span>
-                  <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              <p className={`text-[11px] uppercase tracking-[0.4em] text-slate-500 ${
-                sidebarCollapsed ? "lg:hidden" : ""
-              }`}>
-                Profesores
-              </p>
-              {
-                [
-                  { id: "registrar-profesor", label: "Registrar profesor" },
-                  { id: "lista-profesores", label: "Lista de profesores" },
-                  { id: "registrar-rostros", label: "Registrar rostros" },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveView(
-                        item.id as
-                          | "registrar-profesor"
-                          | "lista-profesores"
-                          | "registrar-rostros"
-                      );
-                      setSidebarOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2 text-left transition hover:border-white/30 hover:bg-white/5 lg:justify-start ${
-                      activeView === item.id
-                        ? "border-amber-300/60 bg-amber-300/10 text-amber-200"
-                        : "border-white/10"
-                    } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0 lg:border-transparent lg:bg-transparent" : ""}`}
-                  >
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/10 ${
-                      activeView === item.id ? "border-amber-300/40 bg-amber-300/10" : ""
-                    }`}>
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                    </span>
-                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
-                  </button>
-                ))
-              }
-            </div>
-
-            <div className="space-y-2">
-              <p className={`text-[11px] uppercase tracking-[0.4em] text-slate-500 ${
-                sidebarCollapsed ? "lg:hidden" : ""
-              }`}>
-                Operacion
-              </p>
-              {
-                [
-                  { id: "crear-admin", label: "Crear usuario admin" },
-                  { id: "asistencias", label: "Asistencias" },
-                  { id: "reportes", label: "Reportes" },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveView(
-                        item.id as "crear-admin" | "asistencias" | "reportes"
-                      );
-                      setSidebarOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2 text-left transition hover:border-white/30 hover:bg-white/5 lg:justify-start ${
-                      activeView === item.id
-                        ? "border-amber-300/60 bg-amber-300/10 text-amber-200"
-                        : "border-white/10"
-                    } ${sidebarCollapsed ? "lg:justify-center lg:gap-0 lg:px-0 lg:border-transparent lg:bg-transparent" : ""}`}
-                  >
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/10 ${
-                      activeView === item.id ? "border-amber-300/40 bg-amber-300/10" : ""
-                    }`}>
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M4 4h16v6H4z" />
-                        <path d="M4 14h16v6H4z" />
-                        <path d="M8 8h8" />
-                        <path d="M8 18h8" />
-                      </svg>
-                    </span>
-                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
-                  </button>
-                ))
-              }
-            </div>
-          </nav>
-
-          <div className="mt-auto pt-6">
-            <button
-              className={`w-full rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-amber-300/60 hover:text-amber-200 hover:bg-amber-300/10 ${
-                sidebarCollapsed ? "lg:px-0 lg:py-3" : ""
-              }`}
-              onClick={signOut}
-            >
-              <span className={sidebarCollapsed ? "lg:hidden" : ""}>Cerrar sesion</span>
-              <span className={`hidden ${sidebarCollapsed ? "lg:inline" : ""}`}>
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2v10" />
-                  <path d="M6.38 6.38a8 8 0 1 0 11.24 0" />
-                </svg>
-              </span>
-            </button>
-          </div>
-        </aside>
+        <AdminSidebar
+          adminEmail={adminProfile?.email}
+          sidebarOpen={sidebarOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          activeView={activeView}
+          onClose={() => setSidebarOpen(false)}
+          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+          onChangeView={setActiveView}
+          onSignOut={signOut}
+        />
 
         <main
           className={`mx-auto flex min-h-screen max-w-6xl flex-1 flex-col gap-10 px-6 py-8 lg:pr-6 lg:py-12 ${
@@ -650,110 +429,13 @@ export default function AdminPage() {
           />
 
           {activeView === "dashboard" ? (
-            <section className="grid gap-6">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {[
-                  {
-                    label: "Profesores",
-                    value: dashboardStats.totalProfesores,
-                  },
-                  {
-                    label: "Activos",
-                    value: dashboardStats.activos,
-                  },
-                  {
-                    label: "Inactivos",
-                    value: dashboardStats.inactivos,
-                  },
-                  {
-                    label: "Rostros registrados",
-                    value: dashboardStats.rostrosRegistrados,
-                  },
-                  {
-                    label: "Asistencias hoy",
-                    value: dashboardStats.asistenciasHoy,
-                  },
-                  {
-                    label: `Reportes ${reportRangeLabel.toLowerCase()}`,
-                    value: reporteRows.length,
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl"
-                  >
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                      {item.label}
-                    </p>
-                    <p className="mt-3 text-3xl font-semibold text-amber-300">
-                      {item.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-100">
-                      Top profesores
-                    </h2>
-                    <span className="text-xs text-slate-400">{reportRangeLabel}</span>
-                  </div>
-                  {topProfesores.length === 0 ? (
-                    <p className="mt-6 text-sm text-slate-400">
-                      Sin horas registradas en este rango.
-                    </p>
-                  ) : (
-                    <div className="mt-6 space-y-4">
-                      {topProfesores.map((row) => (
-                        <div key={row.profesor.id} className="space-y-2">
-                          <div className="flex items-center justify-between text-sm text-slate-300">
-                            <span>
-                              {row.profesor.nombre} {row.profesor.apellido}
-                            </span>
-                            <span className="text-amber-300">
-                              {row.horas.toFixed(2)}h
-                            </span>
-                          </div>
-                          <div className="h-2 w-full rounded-full bg-white/10">
-                            <div
-                              className="h-2 rounded-full bg-amber-300"
-                              style={{
-                                width: `${Math.min(100, (row.horas / topProfesores[0].horas) * 100)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-100">
-                      Entradas por hora
-                    </h2>
-                    <span className="text-xs text-slate-400">Hoy</span>
-                  </div>
-                  <div className="mt-6 grid grid-cols-12 items-end gap-2">
-                    {horasPorEntrada.map((value, index) => (
-                      <div key={`hora-${index}`} className="flex flex-col items-center gap-2">
-                        <div
-                          className="w-full rounded-full bg-amber-300/80"
-                          style={{ height: `${Math.max(6, value * 8)}px` }}
-                          title={`${value} entradas`}
-                        />
-                        <span className="text-[10px] text-slate-400">
-                          {String(index + 6).padStart(2, "0")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
+            <DashboardSection
+              dashboardStats={dashboardStats}
+              reportRangeLabel={reportRangeLabel}
+              reporteRowsCount={reporteRows.length}
+              topProfesores={topProfesores}
+              horasPorEntrada={horasPorEntrada}
+            />
           ) : null}
 
           {activeView === "registrar-profesor" ? (
@@ -784,33 +466,17 @@ export default function AdminPage() {
           ) : null}
 
           {activeView === "lista-profesores" ? (
-            <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-slate-100">Lista de profesores</h2>
-              <p className="mt-2 text-sm text-slate-400">Total: {profesores.length}</p>
-              <div className="mt-6 space-y-3">
-                {profesores.map((profesor) => (
-                  <div
-                    key={profesor.id}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">
-                        {profesor.nombre} {profesor.apellido}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {profesor.activo ? "Activo" : "Inactivo"} · {profesor.jornada}
-                      </p>
-                    </div>
-                    <button
-                      className="text-xs text-amber-300"
-                      onClick={() => handleToggleProfesor(profesor)}
-                    >
-                      {profesor.activo ? "Desactivar" : "Activar"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ProfesoresListSection
+              totalProfesores={profesores.length}
+              pagination={profesoresPagination}
+              onToggleProfesor={handleToggleProfesor}
+              onPrevPage={() => setProfesoresPage((prev) => Math.max(1, prev - 1))}
+              onNextPage={() =>
+                setProfesoresPage((prev) =>
+                  Math.min(profesoresPagination.totalPages, prev + 1)
+                )
+              }
+            />
           ) : null}
 
           {activeView === "registrar-rostros" ? (
@@ -850,6 +516,7 @@ export default function AdminPage() {
               loading={loading}
               profesores={profesores}
               reporteRows={reporteRows}
+              reportAsistencias={reportAsistencias}
               dateKey={dateKey}
               reportRange={reportRange}
               reportRangeLabel={reportRangeLabel}
