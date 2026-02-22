@@ -9,6 +9,7 @@ import { distance, getDescriptorFromVideo, loadFaceModels } from "@/lib/face";
 import Swal from "sweetalert2";
 
 const MATCH_THRESHOLD = 0.45;
+const SCAN_TIMEOUT_MS = 20000;
 
 export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -19,6 +20,7 @@ export default function ScanPage() {
   const scanAttemptsRef = useRef(0);
   const registeringRef = useRef(false);
   const lastMatchRef = useRef<string | null>(null);
+  const matchStreakRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [profesoresActivos, setProfesoresActivos] = useState<Profesor[]>([]);
   const [profesoresReady, setProfesoresReady] = useState(false);
@@ -111,6 +113,7 @@ export default function ScanPage() {
     scanStartedAtRef.current = null;
     scanAttemptsRef.current = 0;
     registeringRef.current = false;
+    matchStreakRef.current = 0;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -145,6 +148,7 @@ export default function ScanPage() {
     setLoading(true);
     lastMatchRef.current = null;
     registeringRef.current = false;
+    matchStreakRef.current = 0;
 
     try {
       if (profesoresError) {
@@ -186,11 +190,11 @@ export default function ScanPage() {
       timeoutRef.current = setTimeout(async () => {
         await showAlert({
           icon: "warning",
-          title: "No se detecto rostro",
-          text: "Intenta acercarte a la camara y mejorar la luz.",
+          title: "No se pudo validar",
+          text: "Intenta acercarte a la camara, mejorar la luz y mantenerte quieto.",
         });
         stopCamera();
-      }, 12000);
+      }, SCAN_TIMEOUT_MS);
 
       intervalRef.current = setInterval(async () => {
         try {
@@ -211,17 +215,18 @@ export default function ScanPage() {
 
           const result = pickBestProfesor(descriptor, activos);
           if (!result.match || !result.profesor) {
-            await showAlert({
-              icon: "error",
-              title: "Profesor no registrado",
-              text: "Este rostro no existe en el sistema.",
-            });
-            stopCamera();
+            matchStreakRef.current = 0;
             return;
           }
 
-          if (lastMatchRef.current === result.profesor.id) return;
-          lastMatchRef.current = result.profesor.id;
+          if (lastMatchRef.current === result.profesor.id) {
+            matchStreakRef.current += 1;
+          } else {
+            lastMatchRef.current = result.profesor.id;
+            matchStreakRef.current = 1;
+          }
+
+          if (matchStreakRef.current < 2) return;
 
           registeringRef.current = true;
           intervalRef.current && clearInterval(intervalRef.current);
