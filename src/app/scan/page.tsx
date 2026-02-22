@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { listProfesoresActivos, registerAsistencia } from "@/lib/asistencia";
+import { registerAsistencia } from "@/lib/asistencia";
+import { subscribeProfesoresActivos } from "@/lib/profesores";
 import type { Profesor } from "@/lib/types";
 import { distance, getDescriptorFromVideo, loadFaceModels } from "@/lib/face";
-import { StatusBanner } from "@/components/StatusBanner";
+import Swal from "sweetalert2";
 
 const MATCH_THRESHOLD = 0.45;
 
@@ -15,16 +16,54 @@ export default function ScanPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scanStartedAtRef = useRef<number | null>(null);
   const scanAttemptsRef = useRef(0);
+  const registeringRef = useRef(false);
+  const lastMatchRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [banner, setBanner] = useState<{
-    tone: "success" | "error" | "warning" | "info";
+  const [profesoresActivos, setProfesoresActivos] = useState<Profesor[]>([]);
+  const [profesoresReady, setProfesoresReady] = useState(false);
+
+  const showAlert = async (options: {
+    icon: "success" | "error" | "warning" | "info" | "question";
     title: string;
-    message?: string;
-  } | null>(null);
-  const [lastMatch, setLastMatch] = useState<string | null>(null);
+    text?: string;
+    confirmText?: string;
+  }) =>
+    Swal.fire({
+      icon: options.icon,
+      title: options.title,
+      text: options.text,
+      confirmButtonText: options.confirmText ?? "Aceptar",
+      customClass: {
+        confirmButton: "swal2-confirm-button",
+        cancelButton: "swal2-cancel-button",
+      },
+      buttonsStyling: false,
+    });
+
+  const showToast = (options: {
+    icon: "success" | "error" | "warning" | "info";
+    title: string;
+  }) =>
+    Swal.fire({
+      icon: options.icon,
+      title: options.title,
+      toast: true,
+      position: "top",
+      timer: 1500,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      customClass: {
+        popup: "swal2-popup",
+      },
+    });
 
   useEffect(() => {
+    const unsubscribe = subscribeProfesoresActivos((items) => {
+      setProfesoresActivos(items);
+      setProfesoresReady(true);
+    });
     return () => {
+      unsubscribe();
       stopCamera();
     };
   }, []);
@@ -51,6 +90,7 @@ export default function ScanPage() {
     intervalRef.current = null;
     scanStartedAtRef.current = null;
     scanAttemptsRef.current = 0;
+    registeringRef.current = false;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -83,21 +123,30 @@ export default function ScanPage() {
   const handleScan = async () => {
     if (!videoRef.current) return;
     setLoading(true);
-    setBanner(null);
-    setLastMatch(null);
+    lastMatchRef.current = null;
+    registeringRef.current = false;
 
     try {
       await loadFaceModels();
       await startCamera();
 
-      const profesores = await listProfesoresActivos();
-      const activos = profesores.filter((profesor) => profesor.faceDescriptor?.length);
+      if (!profesoresReady) {
+        await showAlert({
+          icon: "info",
+          title: "Cargando profesores",
+          text: "Espera un momento y vuelve a intentar.",
+        });
+        stopCamera();
+        return;
+      }
+
+      const activos = profesoresActivos.filter((profesor) => profesor.faceDescriptor?.length);
 
       if (activos.length === 0) {
-        setBanner({
-          tone: "warning",
+        await showAlert({
+          icon: "warning",
           title: "Sin rostros registrados",
-          message: "Pide al admin que registre los rostros primero.",
+          text: "Pide al admin que registre los rostros primero.",
         });
         stopCamera();
         return;
@@ -108,11 +157,12 @@ export default function ScanPage() {
 
       intervalRef.current = setInterval(async () => {
         if (!videoRef.current) return;
+        if (registeringRef.current) return;
         if (scanStartedAtRef.current && Date.now() - scanStartedAtRef.current > 12000) {
-          setBanner({
-            tone: "warning",
+          await showAlert({
+            icon: "warning",
             title: "No se detecto rostro",
-            message: "Intenta acercarte a la camara y mejorar la luz.",
+            text: "Intenta acercarte a la camara y mejorar la luz.",
           });
           stopCamera();
           return;
@@ -122,10 +172,9 @@ export default function ScanPage() {
         if (!descriptor) {
           scanAttemptsRef.current += 1;
           if (scanAttemptsRef.current % 4 === 0) {
-            setBanner({
-              tone: "info",
-              title: "Buscando rostro",
-              message: "Mira al frente y mantente quieto.",
+            showToast({
+              icon: "info",
+              title: "Buscando rostro...",
             });
           }
           return;
@@ -133,35 +182,40 @@ export default function ScanPage() {
 
         const result = pickBestProfesor(descriptor, activos);
         if (!result.match || !result.profesor) {
-          setBanner({
-            tone: "error",
-            title: "Rostro no reconocido",
-            message: "Intenta de nuevo o pide ayuda al admin.",
+          await showAlert({
+            icon: "error",
+            title: "Profesor no registrado",
+            text: "Este rostro no existe en el sistema.",
           });
+          stopCamera();
           return;
         }
 
-        if (lastMatch === result.profesor.id) return;
-        setLastMatch(result.profesor.id);
+        if (lastMatchRef.current === result.profesor.id) return;
+        lastMatchRef.current = result.profesor.id;
+
+        registeringRef.current = true;
+        intervalRef.current && clearInterval(intervalRef.current);
+        intervalRef.current = null;
 
         const response = await registerAsistencia(result.profesor.id);
         if (response.status === "entrada") {
-          setBanner({
-            tone: "success",
+          await showAlert({
+            icon: "success",
             title: "Entrada registrada",
-            message: `${result.profesor.nombre} ${result.profesor.apellido}`,
+            text: `${result.profesor.nombre} ${result.profesor.apellido}`,
           });
         } else if (response.status === "salida") {
-          setBanner({
-            tone: "success",
+          await showAlert({
+            icon: "success",
             title: "Salida registrada",
-            message: `${result.profesor.nombre} ${result.profesor.apellido}`,
+            text: `${result.profesor.nombre} ${result.profesor.apellido}`,
           });
         } else {
-          setBanner({
-            tone: "warning",
+          await showAlert({
+            icon: "warning",
             title: "Registro bloqueado",
-            message: response.message ?? "No se puede registrar otro ciclo hoy.",
+            text: response.message ?? "No se puede registrar otro ciclo hoy.",
           });
         }
 
@@ -169,10 +223,10 @@ export default function ScanPage() {
       }, 400);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Camara no disponible";
-      setBanner({
-        tone: "error",
+      await showAlert({
+        icon: "error",
         title: "No se pudo iniciar",
-        message,
+        text: message,
       });
       stopCamera();
     } finally {
@@ -196,14 +250,13 @@ export default function ScanPage() {
         <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-xl">
           <video
             ref={videoRef}
-            className="h-[360px] w-full rounded-2xl object-cover"
+            className="h-90 w-full rounded-2xl object-cover"
             playsInline
             muted
           />
         </div>
 
         <div className="flex flex-col gap-4">
-          {banner ? <StatusBanner {...banner} /> : null}
           <button
             className="rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-900 disabled:opacity-60"
             onClick={handleScan}

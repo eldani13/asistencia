@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "sweetalert2/dist/sweetalert2.min.css";
 
 :root {
 	color-scheme: only light;
@@ -28,4 +29,57 @@ h4 {
 
 a {
 	color: inherit;
+}
+
+input[type="time"],
+input[type="date"] {
+	color-scheme: dark;
+	appearance: none;
+	background-repeat: no-repeat;
+	background-position: right 0.9rem center;
+	background-size: 1rem 1rem;
+	padding-right: 1.25rem;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+	opacity: 0;
+}
+
+input[type="time"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+}
+
+input[type="date"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2.5' x2='16' y2='6.5'/%3E%3Cline x1='8' y1='2.5' x2='8' y2='6.5'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+}
+
+.swal2-popup {
+	border: 1px solid rgba(148, 163, 184, 0.2);
+	background: #0b1020;
+	color: #e2e8f0;
+}
+
+.swal2-title,
+.swal2-html-container {
+	color: #e2e8f0;
+}
+
+.swal2-confirm-button,
+.swal2-cancel-button {
+	border-radius: 999px;
+	padding: 0.65rem 1.4rem;
+	font-weight: 600;
+	border: none;
+}
+
+.swal2-confirm-button {
+	background: #fbbf24;
+	color: #0f172a;
+}
+
+.swal2-cancel-button {
+	background: transparent;
+	color: #e2e8f0;
+	border: 1px solid rgba(226, 232, 240, 0.35);
 }

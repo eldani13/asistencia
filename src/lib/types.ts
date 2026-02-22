@@ -11,6 +11,9 @@ export type Profesor = {
   apellido: string;
   activo: boolean;
   faceDescriptor: number[] | null;
+  jornada: "mañana" | "tarde";
+  horaInicio: string;
+  horaFin: string;
   createdAt: Date | null;
 };
 
@@ -20,5 +23,8 @@ export type Asistencia = {
   fecha: string; // YYYY-MM-DD
   horaEntrada: string | null; // HH:mm:ss
   horaSalida: string | null; // HH:mm:ss
+  jornada: "mañana" | "tarde" | null;
+  minutosTrabajados?: number;
+  horasTrabajadas?: number;
   createdAt: Date | null;
 };
