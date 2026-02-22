@@ -67,7 +67,6 @@ export const getProfesorById = async (id: string): Promise<Profesor | null> => {
     jornada: (data.jornada ?? "mañana") as "mañana" | "tarde",
     horaInicio: String(data.horaInicio ?? "06:15"),
     horaFin: String(data.horaFin ?? "14:15"),
-    createdAt: data.createdAt?.toDate?.() ?? null,
   };
 };
 
