@@ -134,26 +134,6 @@ export default function ScanPage() {
     }
   };
 
-  const stopCamera = () => {
-    intervalRef.current && clearInterval(intervalRef.current);
-    intervalRef.current = null;
-    timeoutRef.current && clearTimeout(timeoutRef.current);
-    timeoutRef.current = null;
-    scanStartedAtRef.current = null;
-    scanAttemptsRef.current = 0;
-    registeringRef.current = false;
-    matchStreakRef.current = 0;
-    setLoading(false);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-    }
-  };
-
   const pickBestProfesor = (
     descriptor: Float32Array,
     profesores: Profesor[]
