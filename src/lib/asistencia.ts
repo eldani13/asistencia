@@ -131,15 +131,14 @@ export const subscribeAsistenciasByDate = (
         id: docItem.id,
         profesorId: String(data.profesorId ?? ""),
         fecha: String(data.fecha ?? ""),
-        horaEntrada: data.horaEntrada ? String(data.horaEntrada) : null,
-        horaSalida: data.horaSalida ? String(data.horaSalida) : null,
-        jornada: (data.jornada ?? null) as "mañana" | "tarde" | null,
+        horaEntrada: data.horaEntrada ? String(data.horaEntrada) : undefined,
+        horaSalida: data.horaSalida ? String(data.horaSalida) : undefined,
+        jornada: data.jornada ? String(data.jornada) : undefined,
         minutosTrabajados: minutosTrabajados ?? undefined,
         horasTrabajadas:
           minutosTrabajados !== null
             ? Math.round((minutosTrabajados / 60) * 100) / 100
             : undefined,
-        createdAt: data.createdAt?.toDate?.() ?? null,
       };
     });
     onChange(items);
