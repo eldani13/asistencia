@@ -1,8 +1,4 @@
-import type { Profesor } from "@/types/profesor/profesor";
-import type {
-  ProfesoresListSectionProps,
-  ProfesoresPagination,
-} from "@/types/profesor/profesores-list-section";
+import type { ProfesoresListSectionProps } from "@/types/profesor/profesores-list-section";
 
 export const ProfesoresListSection = ({
   totalProfesores,

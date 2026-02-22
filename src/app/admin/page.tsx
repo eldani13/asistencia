@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AdminView } from "@/types/admin/admin-sidebar";
-import Link from "next/link";
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";

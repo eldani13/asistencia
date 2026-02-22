@@ -8,8 +8,8 @@ export function AsistenciasSection({
   loading,
   dateKey,
   onDateChange,
-  onUpdateAsistencia,
-  onAsistenciasChange,
+  // onUpdateAsistencia,
+  // onAsistenciasChange,
 }: AsistenciasSectionProps) {
   const asistenciasPageSize = 6;
   const [asistenciasPage, setAsistenciasPage] = useState(1);
@@ -26,7 +26,8 @@ export function AsistenciasSection({
 
   useEffect(() => {
     if (asistenciasPage !== asistenciasPagination.page) {
-      setAsistenciasPage(asistenciasPagination.page);
+      // Avoid cascading renders by using a microtask
+      Promise.resolve().then(() => setAsistenciasPage(asistenciasPagination.page));
     }
   }, [asistenciasPage, asistenciasPagination.page]);
 

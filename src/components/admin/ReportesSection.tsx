@@ -106,17 +106,17 @@ export const ReportesSection = ({
   }, [dailySummary, detalleRows, page, pageSize, profesoresRows, reportType]);
 
   useEffect(() => {
-    setPage(1);
+    Promise.resolve().then(() => setPage(1));
   }, [reportType, reportRange]);
 
   useEffect(() => {
     if (page !== pagedItems.page) {
-      setPage(pagedItems.page);
+      Promise.resolve().then(() => setPage(pagedItems.page));
     }
   }, [page, pagedItems.page]);
 
   useEffect(() => {
-    setPage(1);
+    Promise.resolve().then(() => setPage(1));
   }, [selectedProfesor]);
 
   return (
