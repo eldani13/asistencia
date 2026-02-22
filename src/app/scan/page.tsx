@@ -245,7 +245,7 @@ export default function ScanPage() {
           if (matchStreakRef.current < MATCH_STREAK_REQUIRED) return;
 
           registeringRef.current = true;
-          intervalRef.current && clearInterval(intervalRef.current);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           intervalRef.current = null;
 
           const response = await registerAsistencia(result.profesor.id);
