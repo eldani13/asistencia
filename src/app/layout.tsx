@@ -16,7 +16,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Asistencia QR + Face",
+  title: "Registro de asistencia",
   description: "Control de asistencia con QR y reconocimiento facial.",
 };
 

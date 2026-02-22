@@ -30,7 +30,7 @@ export const AsistenciasSection = ({
           <p className="mt-1 text-sm text-slate-400">Correcciones permitidas solo aqui.</p>
         </div>
         <input
-          className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2 text-sm text-slate-100"
+          className="rounded-full border border-white/10 bg-slate-900/80 py-2 pl-4 pr-10 text-sm text-slate-100"
           type="date"
           value={dateKey}
           onChange={(event) => onDateChange(event.target.value)}
@@ -60,50 +60,22 @@ export const AsistenciasSection = ({
                       </p>
                       <p className="text-xs text-slate-400">{asistencia.fecha}</p>
                     </div>
-                    <button
-                      className="text-xs text-amber-300"
-                      onClick={() =>
-                        onUpdateAsistencia(
-                          asistencia.id,
-                          asistencia.horaEntrada ?? "",
-                          asistencia.horaSalida ?? ""
-                        )
-                      }
-                    >
-                      Guardar
-                    </button>
                   </div>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <label className="flex flex-col gap-2 text-xs text-slate-400">
                       Hora entrada
                       <input
-                        className="rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-100"
+                        className="rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 opacity-70"
                         value={asistencia.horaEntrada ?? ""}
-                        onChange={(event) =>
-                          onAsistenciasChange(
-                            asistencias.map((item) =>
-                              item.id === asistencia.id
-                                ? { ...item, horaEntrada: event.target.value }
-                                : item
-                            )
-                          )
-                        }
+                        readOnly
                       />
                     </label>
                     <label className="flex flex-col gap-2 text-xs text-slate-400">
                       Hora salida
                       <input
-                        className="rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-100"
+                        className="rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 opacity-70"
                         value={asistencia.horaSalida ?? ""}
-                        onChange={(event) =>
-                          onAsistenciasChange(
-                            asistencias.map((item) =>
-                              item.id === asistencia.id
-                                ? { ...item, horaSalida: event.target.value }
-                                : item
-                            )
-                          )
-                        }
+                        readOnly
                       />
                     </label>
                   </div>
