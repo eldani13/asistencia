@@ -14,6 +14,7 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanStartedAtRef = useRef<number | null>(null);
   const scanAttemptsRef = useRef(0);
   const registeringRef = useRef(false);
@@ -91,11 +92,22 @@ export default function ScanPage() {
     streamRef.current = stream;
     videoRef.current.srcObject = stream;
     await videoRef.current.play();
+    if (videoRef.current.readyState < 2) {
+      await new Promise<void>((resolve) => {
+        const handleReady = () => {
+          videoRef.current?.removeEventListener("loadedmetadata", handleReady);
+          resolve();
+        };
+        videoRef.current?.addEventListener("loadedmetadata", handleReady);
+      });
+    }
   };
 
   const stopCamera = () => {
     intervalRef.current && clearInterval(intervalRef.current);
     intervalRef.current = null;
+    timeoutRef.current && clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
     scanStartedAtRef.current = null;
     scanAttemptsRef.current = 0;
     registeringRef.current = false;
@@ -171,71 +183,81 @@ export default function ScanPage() {
       scanStartedAtRef.current = Date.now();
       scanAttemptsRef.current = 0;
 
-      intervalRef.current = setInterval(async () => {
-        if (!videoRef.current) return;
-        if (registeringRef.current) return;
-        if (scanStartedAtRef.current && Date.now() - scanStartedAtRef.current > 12000) {
-          await showAlert({
-            icon: "warning",
-            title: "No se detecto rostro",
-            text: "Intenta acercarte a la camara y mejorar la luz.",
-          });
-          stopCamera();
-          return;
-        }
+      timeoutRef.current = setTimeout(async () => {
+        await showAlert({
+          icon: "warning",
+          title: "No se detecto rostro",
+          text: "Intenta acercarte a la camara y mejorar la luz.",
+        });
+        stopCamera();
+      }, 12000);
 
-        const descriptor = await getDescriptorFromVideo(videoRef.current);
-        if (!descriptor) {
-          scanAttemptsRef.current += 1;
-          if (scanAttemptsRef.current % 4 === 0) {
-            showToast({
-              icon: "info",
-              title: "Buscando rostro...",
+      intervalRef.current = setInterval(async () => {
+        try {
+          if (!videoRef.current) return;
+          if (registeringRef.current) return;
+
+          const descriptor = await getDescriptorFromVideo(videoRef.current);
+          if (!descriptor) {
+            scanAttemptsRef.current += 1;
+            if (scanAttemptsRef.current % 4 === 0) {
+              showToast({
+                icon: "info",
+                title: "Buscando rostro...",
+              });
+            }
+            return;
+          }
+
+          const result = pickBestProfesor(descriptor, activos);
+          if (!result.match || !result.profesor) {
+            await showAlert({
+              icon: "error",
+              title: "Profesor no registrado",
+              text: "Este rostro no existe en el sistema.",
+            });
+            stopCamera();
+            return;
+          }
+
+          if (lastMatchRef.current === result.profesor.id) return;
+          lastMatchRef.current = result.profesor.id;
+
+          registeringRef.current = true;
+          intervalRef.current && clearInterval(intervalRef.current);
+          intervalRef.current = null;
+
+          const response = await registerAsistencia(result.profesor.id);
+          if (response.status === "entrada") {
+            await showAlert({
+              icon: "success",
+              title: "Entrada registrada",
+              text: `${result.profesor.nombre} ${result.profesor.apellido}`,
+            });
+          } else if (response.status === "salida") {
+            await showAlert({
+              icon: "success",
+              title: "Salida registrada",
+              text: `${result.profesor.nombre} ${result.profesor.apellido}`,
+            });
+          } else {
+            await showAlert({
+              icon: "warning",
+              title: "Registro bloqueado",
+              text: response.message ?? "No se puede registrar otro ciclo hoy.",
             });
           }
-          return;
-        }
 
-        const result = pickBestProfesor(descriptor, activos);
-        if (!result.match || !result.profesor) {
+          stopCamera();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Error al detectar";
           await showAlert({
             icon: "error",
-            title: "Profesor no registrado",
-            text: "Este rostro no existe en el sistema.",
+            title: "Error en escaneo",
+            text: message,
           });
           stopCamera();
-          return;
         }
-
-        if (lastMatchRef.current === result.profesor.id) return;
-        lastMatchRef.current = result.profesor.id;
-
-        registeringRef.current = true;
-        intervalRef.current && clearInterval(intervalRef.current);
-        intervalRef.current = null;
-
-        const response = await registerAsistencia(result.profesor.id);
-        if (response.status === "entrada") {
-          await showAlert({
-            icon: "success",
-            title: "Entrada registrada",
-            text: `${result.profesor.nombre} ${result.profesor.apellido}`,
-          });
-        } else if (response.status === "salida") {
-          await showAlert({
-            icon: "success",
-            title: "Salida registrada",
-            text: `${result.profesor.nombre} ${result.profesor.apellido}`,
-          });
-        } else {
-          await showAlert({
-            icon: "warning",
-            title: "Registro bloqueado",
-            text: response.message ?? "No se puede registrar otro ciclo hoy.",
-          });
-        }
-
-        stopCamera();
       }, 400);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Camara no disponible";
@@ -266,7 +288,7 @@ export default function ScanPage() {
         <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-xl">
           <video
             ref={videoRef}
-            className="h-90 w-full rounded-2xl object-cover"
+            className="h-90 w-full rounded-2xl object-cover -scale-x-100"
             playsInline
             muted
           />

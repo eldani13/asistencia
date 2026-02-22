@@ -35,7 +35,7 @@ export const RegistrarRostroCard = ({
     <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/40 p-3">
       <video
         ref={faceVideoRef}
-        className="h-96 w-full rounded-xl object-cover"
+        className="h-96 w-full rounded-xl object-cover -scale-x-100"
         playsInline
         muted
       />
