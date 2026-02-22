@@ -21,6 +21,7 @@ export default function ScanPage() {
   const [loading, setLoading] = useState(false);
   const [profesoresActivos, setProfesoresActivos] = useState<Profesor[]>([]);
   const [profesoresReady, setProfesoresReady] = useState(false);
+  const [profesoresError, setProfesoresError] = useState<string | null>(null);
 
   const showAlert = async (options: {
     icon: "success" | "error" | "warning" | "info" | "question";
@@ -58,10 +59,17 @@ export default function ScanPage() {
     });
 
   useEffect(() => {
-    const unsubscribe = subscribeProfesoresActivos((items) => {
-      setProfesoresActivos(items);
-      setProfesoresReady(true);
-    });
+    const unsubscribe = subscribeProfesoresActivos(
+      (items) => {
+        setProfesoresActivos(items);
+        setProfesoresReady(true);
+        setProfesoresError(null);
+      },
+      () => {
+        setProfesoresReady(true);
+        setProfesoresError("No se pudieron cargar los profesores activos.");
+      }
+    );
     return () => {
       unsubscribe();
       stopCamera();
@@ -127,8 +135,14 @@ export default function ScanPage() {
     registeringRef.current = false;
 
     try {
-      await loadFaceModels();
-      await startCamera();
+      if (profesoresError) {
+        await showAlert({
+          icon: "error",
+          title: "No se pudo cargar profesores",
+          text: profesoresError,
+        });
+        return;
+      }
 
       if (!profesoresReady) {
         await showAlert({
@@ -136,9 +150,11 @@ export default function ScanPage() {
           title: "Cargando profesores",
           text: "Espera un momento y vuelve a intentar.",
         });
-        stopCamera();
         return;
       }
+
+      await loadFaceModels();
+      await startCamera();
 
       const activos = profesoresActivos.filter((profesor) => profesor.faceDescriptor?.length);
 

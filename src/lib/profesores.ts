@@ -40,31 +40,36 @@ export const listProfesores = async (): Promise<Profesor[]> => {
   });
 };
 
-export const subscribeProfesoresActivos = (onChange: (items: Profesor[]) => void): Unsubscribe => {
+export const subscribeProfesoresActivos = (
+  onChange: (items: Profesor[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
   const db = requireDb();
   const profesoresCollection = collection(db, "profesores");
-  const profesoresQuery = query(
-    profesoresCollection,
-    where("activo", "==", true),
-    orderBy("createdAt", "desc")
+  const profesoresQuery = query(profesoresCollection, where("activo", "==", true));
+  return onSnapshot(
+    profesoresQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((docItem) => {
+        const data = docItem.data();
+        return {
+          id: docItem.id,
+          nombre: String(data.nombre ?? ""),
+          apellido: String(data.apellido ?? ""),
+          activo: Boolean(data.activo ?? true),
+          faceDescriptor: (data.faceDescriptor ?? null) as number[] | null,
+          jornada: (data.jornada ?? "mañana") as "mañana" | "tarde",
+          horaInicio: String(data.horaInicio ?? "06:15"),
+          horaFin: String(data.horaFin ?? "14:15"),
+          createdAt: data.createdAt?.toDate?.() ?? null,
+        };
+      });
+      onChange(items);
+    },
+    (error) => {
+      onError?.(error instanceof Error ? error : new Error("Snapshot error"));
+    }
   );
-  return onSnapshot(profesoresQuery, (snapshot) => {
-    const items = snapshot.docs.map((docItem) => {
-      const data = docItem.data();
-      return {
-        id: docItem.id,
-        nombre: String(data.nombre ?? ""),
-        apellido: String(data.apellido ?? ""),
-        activo: Boolean(data.activo ?? true),
-        faceDescriptor: (data.faceDescriptor ?? null) as number[] | null,
-        jornada: (data.jornada ?? "mañana") as "mañana" | "tarde",
-        horaInicio: String(data.horaInicio ?? "06:15"),
-        horaFin: String(data.horaFin ?? "14:15"),
-        createdAt: data.createdAt?.toDate?.() ?? null,
-      };
-    });
-    onChange(items);
-  });
 };
 
 export const subscribeProfesores = (onChange: (items: Profesor[]) => void): Unsubscribe => {
