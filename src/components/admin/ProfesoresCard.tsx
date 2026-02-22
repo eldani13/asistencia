@@ -1,20 +1,4 @@
-import type { Profesor } from "@/lib/types";
-
-type ProfesoresCardProps = {
-  profesores: Profesor[];
-  nombre: string;
-  apellido: string;
-  jornada: "mañana" | "tarde";
-  horaInicio: string;
-  horaFin: string;
-  onNombreChange: (value: string) => void;
-  onApellidoChange: (value: string) => void;
-  onJornadaChange: (value: "mañana" | "tarde") => void;
-  onHoraInicioChange: (value: string) => void;
-  onHoraFinChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onToggleProfesor: (profesor: Profesor) => void;
-};
+import type { ProfesoresCardProps } from "@/types/profesor/profesores-card";
 
 export const ProfesoresCard = ({
   profesores,

@@ -1,12 +1,4 @@
-import type { Profesor } from "@/lib/types";
-
-type RegistrarRostroCardProps = {
-  profesores: Profesor[];
-  selectedProfesor: string;
-  faceVideoRef: React.RefObject<HTMLVideoElement | null>;
-  onSelectedProfesorChange: (value: string) => void;
-  onCaptureFace: () => void;
-};
+import type { RegistrarRostroCardProps } from "@/types/profesor/registrar-rostro-card";
 
 export const RegistrarRostroCard = ({
   profesores,

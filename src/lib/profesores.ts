@@ -12,7 +12,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
-import type { Profesor } from "./types";
+import type { Profesor } from "@/types/profesor";
 
 const requireDb = () => {
   const db = getFirebaseDb();

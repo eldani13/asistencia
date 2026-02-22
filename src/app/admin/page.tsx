@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AdminView } from "@/components/admin/AdminSidebar";
+import type { AdminView } from "@/types/admin/admin-sidebar";
 import Link from "next/link";
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -13,7 +13,7 @@ import { ProfesoresCard } from "@/components/admin/ProfesoresCard";
 import { ProfesoresListSection } from "@/components/admin/ProfesoresListSection";
 import { RegistrarRostroCard } from "@/components/admin/RegistrarRostroCard";
 import { ReportesSection } from "@/components/admin/ReportesSection";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/context/AuthContext";
 import { createAdminUser } from "@/lib/auth";
 import {
   formatDateKey,
@@ -28,7 +28,8 @@ import {
   updateProfesor,
 } from "@/lib/profesores";
 import { distance, getDescriptorFromVideo, loadFaceModels } from "@/lib/face";
-import type { Asistencia, Profesor } from "@/lib/types";
+import type { Asistencia } from "@/types/asistencia/asistencia";
+import type { Profesor } from "@/types/profesor/profesor";
 import Swal from "sweetalert2";
 
 export default function AdminPage() {
@@ -405,7 +406,7 @@ export default function AdminPage() {
           />
         ) : null}
         <AdminSidebar
-          adminEmail={adminProfile?.email}
+          adminEmail={adminProfile?.email ?? ""}
           sidebarOpen={sidebarOpen}
           sidebarCollapsed={sidebarCollapsed}
           activeView={activeView}
@@ -421,7 +422,7 @@ export default function AdminPage() {
           }`}
         >
           <AdminHeader
-            email={adminProfile?.email}
+            email={adminProfile?.email ?? ""}
             onSignOut={signOut}
             showMenuButton
             onMenuClick={() => setSidebarOpen(true)}
@@ -433,7 +434,11 @@ export default function AdminPage() {
               dashboardStats={dashboardStats}
               reportRangeLabel={reportRangeLabel}
               reporteRowsCount={reporteRows.length}
-              topProfesores={topProfesores}
+              topProfesores={topProfesores.map((row) => ({
+                nombre: row.profesor.nombre,
+                apellido: row.profesor.apellido,
+                horas: row.horas,
+              }))}
               horasPorEntrada={horasPorEntrada}
             />
           ) : null}
@@ -449,7 +454,7 @@ export default function AdminPage() {
               onNombreChange={setNombre}
               onApellidoChange={setApellido}
               onJornadaChange={(value) => {
-                setJornada(value);
+                setJornada(value as "mañana" | "tarde");
                 if (value === "mañana") {
                   setHoraInicio("06:15");
                   setHoraFin("14:15");

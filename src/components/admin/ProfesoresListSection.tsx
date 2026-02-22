@@ -1,18 +1,8 @@
-import type { Profesor } from "@/lib/types";
-
-type ProfesoresPagination = {
-  items: Profesor[];
-  page: number;
-  totalPages: number;
-};
-
-type ProfesoresListSectionProps = {
-  totalProfesores: number;
-  pagination: ProfesoresPagination;
-  onToggleProfesor: (profesor: Profesor) => void;
-  onPrevPage: () => void;
-  onNextPage: () => void;
-};
+import type { Profesor } from "@/types/profesor/profesor";
+import type {
+  ProfesoresListSectionProps,
+  ProfesoresPagination,
+} from "@/types/profesor/profesores-list-section";
 
 export const ProfesoresListSection = ({
   totalProfesores,

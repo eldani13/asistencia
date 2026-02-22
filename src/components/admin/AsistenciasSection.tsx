@@ -1,17 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Asistencia, Profesor } from "@/lib/types";
+import type { AsistenciasSectionProps } from "@/types/asistencia/asistencias-section";
+import type { Profesor } from "@/types/profesor/profesor";
 
-type AsistenciasSectionProps = {
-  asistencias: Asistencia[];
-  profesores: Profesor[];
-  loading: boolean;
-  dateKey: string;
-  onDateChange: (value: string) => void;
-  onUpdateAsistencia: (asistenciaId: string, entrada: string, salida: string) => void;
-  onAsistenciasChange: (next: Asistencia[]) => void;
-};
-
-export const AsistenciasSection = ({
+export function AsistenciasSection({
   asistencias,
   profesores,
   loading,
@@ -19,11 +10,11 @@ export const AsistenciasSection = ({
   onDateChange,
   onUpdateAsistencia,
   onAsistenciasChange,
-}: AsistenciasSectionProps) => {
+}: AsistenciasSectionProps) {
   const asistenciasPageSize = 6;
   const [asistenciasPage, setAsistenciasPage] = useState(1);
   const profesorMap = new Map<string, Profesor>();
-  profesores.forEach((profesor) => profesorMap.set(profesor.id, profesor));
+  profesores.forEach((profesor: Profesor) => profesorMap.set(profesor.id, profesor));
 
   const asistenciasPagination = useMemo(() => {
     const totalPages = Math.max(1, Math.ceil(asistencias.length / asistenciasPageSize));
@@ -161,4 +152,5 @@ export const AsistenciasSection = ({
       ) : null}
     </section>
   );
-};
+}
+

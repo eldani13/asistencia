@@ -1,25 +1,4 @@
-import type { Profesor } from "@/lib/types";
-
-type DashboardStats = {
-  totalProfesores: number;
-  activos: number;
-  inactivos: number;
-  rostrosRegistrados: number;
-  asistenciasHoy: number;
-};
-
-type TopProfesor = {
-  profesor: Profesor;
-  horas: number;
-};
-
-type DashboardSectionProps = {
-  dashboardStats: DashboardStats;
-  reportRangeLabel: string;
-  reporteRowsCount: number;
-  topProfesores: TopProfesor[];
-  horasPorEntrada: number[];
-};
+import type { DashboardSectionProps } from "@/types/dashboard/dashboard";
 
 export const DashboardSection = ({
   dashboardStats,
@@ -101,57 +80,45 @@ export const DashboardSection = ({
       ))}
     </div>
 
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">Top profesores</h2>
-          <span className="text-xs text-slate-400">{reportRangeLabel}</span>
-        </div>
-        {topProfesores.length === 0 ? (
-          <p className="mt-6 text-sm text-slate-400">Sin horas registradas en este rango.</p>
-        ) : (
-          <div className="mt-6 space-y-4">
-            {topProfesores.map((row) => (
-              <div key={row.profesor.id} className="space-y-2">
-                <div className="flex items-center justify-between text-sm text-slate-300">
-                  <span>
-                    {row.profesor.nombre} {row.profesor.apellido}
-                  </span>
-                  <span className="text-amber-300">{row.horas.toFixed(2)}h</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-white/10">
-                  <div
-                    className="h-2 rounded-full bg-linear-to-r from-amber-300 to-amber-500"
-                    style={{
-                      width: `${Math.min(100, (row.horas / topProfesores[0].horas) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+    <div className="mt-6 space-y-4">
+      {topProfesores.map((row, idx) => (
+        <div key={idx} className="space-y-2">
+          <div className="flex items-center justify-between text-sm text-slate-300">
+            <span>
+              {row.nombre} {row.apellido}
+            </span>
+            <span className="text-amber-300">{row.horas.toFixed(2)}h</span>
           </div>
-        )}
-      </div>
+          <div className="h-2 w-full rounded-full bg-white/10">
+            <div
+              className="h-2 rounded-full bg-linear-to-r from-amber-300 to-amber-500"
+              style={{
+                width: `${Math.min(100, (row.horas / (topProfesores[0]?.horas || 1)) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">Entradas por hora</h2>
-          <span className="text-xs text-slate-400">Hoy</span>
-        </div>
-        <div className="mt-6 grid grid-cols-12 items-end gap-2">
-          {horasPorEntrada.map((value, index) => (
-            <div key={`hora-${index}`} className="flex flex-col items-center gap-2">
-              <div
-                className="w-full rounded-full bg-amber-300/80"
-                style={{ height: `${Math.max(6, value * 8)}px` }}
-                title={`${value} entradas`}
-              />
-              <span className="text-[10px] text-slate-400">
-                {String(index + 6).padStart(2, "0")}
-              </span>
-            </div>
-          ))}
-        </div>
+    <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-xl">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-slate-100">Entradas por hora</h2>
+        <span className="text-xs text-slate-400">Hoy</span>
+      </div>
+      <div className="mt-6 grid grid-cols-12 items-end gap-2">
+        {horasPorEntrada.map((value: number, index: number) => (
+          <div key={`hora-${index}`} className="flex flex-col items-center gap-2">
+            <div
+              className="w-full rounded-full bg-amber-300/80"
+              style={{ height: `${Math.max(6, value * 8)}px` }}
+              title={`${value} entradas`}
+            />
+            <span className="text-[10px] text-slate-400">
+              {String(index + 6).padStart(2, "0")}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   </section>

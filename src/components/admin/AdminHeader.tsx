@@ -1,12 +1,4 @@
-import type { AdminProfile } from "@/lib/types";
-
-type AdminHeaderProps = {
-  email?: AdminProfile["email"] | null;
-  onSignOut: () => void;
-  onMenuClick?: () => void;
-  showMenuButton?: boolean;
-  showSignOut?: boolean;
-};
+import type { AdminHeaderProps } from "@/types/admin/admin-header";
 
 export const AdminHeader = ({
   email,

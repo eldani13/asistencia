@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "firebase/auth";
 import { getAdminProfile, loginWithEmail, logout, watchAuthState } from "@/lib/auth";
-import type { AdminProfile } from "@/lib/types";
+import type { AdminProfile } from "@/types/admin/admin-profile";
 
 type AuthContextValue = {
   user: User | null;

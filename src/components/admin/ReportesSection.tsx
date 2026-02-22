@@ -1,21 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Asistencia, Profesor } from "@/lib/types";
-
-type ReporteRow = {
-  profesor: Profesor;
-  horas: number;
-};
-
-type ReportesSectionProps = {
-  loading: boolean;
-  profesores: Profesor[];
-  reporteRows: ReporteRow[];
-  reportAsistencias: Asistencia[];
-  dateKey: string;
-  reportRange: "dia" | "semana" | "mes";
-  reportRangeLabel: string;
-  onReportRangeChange: (value: "dia" | "semana" | "mes") => void;
-};
+import type { Asistencia } from "@/types/asistencia/asistencia";
+import type {
+  ReporteRow,
+  ReportesSectionProps,
+} from "@/types/reportes/reportes-section";
 
 export const ReportesSection = ({
   loading,
@@ -40,17 +28,18 @@ export const ReportesSection = ({
     const totals = new Map<"mañana" | "tarde", number>();
     const counts = new Map<"mañana" | "tarde", number>();
     reportAsistencias.forEach((item) => {
-      const jornada = item.jornada ?? "mañana";
+      const jornada = (item.jornada ?? "mañana") as "mañana" | "tarde";
       const minutes = item.minutosTrabajados ?? 0;
       totals.set(jornada, (totals.get(jornada) ?? 0) + minutes);
       counts.set(jornada, (counts.get(jornada) ?? 0) + 1);
     });
     return (["mañana", "tarde"] as const).map((jornada) => {
-      const minutos = totals.get(jornada) ?? 0;
+      const j = jornada as "mañana" | "tarde";
+      const minutos = totals.get(j) ?? 0;
       return {
         jornada,
         horas: Math.round((minutos / 60) * 100) / 100,
-        registros: counts.get(jornada) ?? 0,
+        registros: counts.get(j) ?? 0,
       };
     });
   }, [reportAsistencias]);

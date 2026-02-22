@@ -12,7 +12,8 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
-import type { Asistencia, Profesor } from "./types";
+import type { Asistencia } from "@/types/asistencia";
+import type { Profesor } from "@/types/profesor";
 
 const requireDb = () => {
   const db = getFirebaseDb();

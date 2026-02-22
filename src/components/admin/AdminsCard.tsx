@@ -1,12 +1,5 @@
 import { useState } from "react";
-
-type AdminsCardProps = {
-  adminEmail: string;
-  adminPassword: string;
-  onAdminEmailChange: (value: string) => void;
-  onAdminPasswordChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-};
+import type { AdminsCardProps } from "@/types/admin/admin-card";
 
 export const AdminsCard = ({
   adminEmail,

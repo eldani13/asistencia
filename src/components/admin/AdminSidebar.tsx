@@ -1,24 +1,5 @@
 import Image from "next/image";
-
-export type AdminView =
-  | "dashboard"
-  | "registrar-profesor"
-  | "lista-profesores"
-  | "registrar-rostros"
-  | "crear-admin"
-  | "asistencias"
-  | "reportes";
-
-type AdminSidebarProps = {
-  adminEmail?: string | null;
-  sidebarOpen: boolean;
-  sidebarCollapsed: boolean;
-  activeView: AdminView;
-  onClose: () => void;
-  onToggleCollapse: () => void;
-  onChangeView: (view: AdminView) => void;
-  onSignOut: () => void;
-};
+import type { AdminSidebarProps, AdminView } from "@/types/admin/admin-sidebar";
 
 export const AdminSidebar = ({
   adminEmail,
@@ -32,7 +13,7 @@ export const AdminSidebar = ({
 }: AdminSidebarProps) => (
   <aside
     className={`fixed inset-y-0 left-0 z-40 flex h-screen -translate-x-full flex-col border-r border-white/10 bg-linear-to-b from-slate-950 via-slate-950/90 to-slate-900/80 p-6 shadow-2xl backdrop-blur transition-transform lg:translate-x-0 ${
-      sidebarCollapsed ? "w-64 lg:w-20" : "w-64"
+      sidebarCollapsed ? "w-72 lg:w-24" : "w-80"
     } ${sidebarOpen ? "translate-x-0" : ""}`}
   >
     <div className="flex items-center justify-between gap-2">
@@ -50,7 +31,12 @@ export const AdminSidebar = ({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
             Admin
           </p>
-          <p className="text-xs text-slate-300">{adminEmail}</p>
+          <p
+            className="text-xs text-slate-300 max-w-[140px] truncate break-all block lg:max-w-[100px] xl:max-w-[180px]"
+            title={adminEmail}
+          >
+            {adminEmail}
+          </p>
         </div>
       </div>
       <button

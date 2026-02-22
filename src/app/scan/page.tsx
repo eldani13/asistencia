@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { ScanCameraCard } from "@/components/scan/ScanCameraCard";
+import { ScanLayout } from "@/components/scan/ScanLayout";
+import { ScanStatusPanel } from "@/components/scan/ScanStatusPanel";
+import { ScanStepsPanel } from "@/components/scan/ScanStepsPanel";
 import { registerAsistencia } from "@/lib/asistencia";
 import { subscribeProfesoresActivos } from "@/lib/profesores";
-import type { Profesor } from "@/lib/types";
+import type { Profesor } from "@/types/profesor/profesor";
 import { distance, getDescriptorFromVideo, loadFaceModels } from "@/lib/face";
 import Swal from "sweetalert2";
 
-const MATCH_THRESHOLD = 0.45;
+const MATCH_THRESHOLD = 0.5;
+const MATCH_STREAK_REQUIRED = 1;
 const SCAN_TIMEOUT_MS = 20000;
 
 export default function ScanPage() {
@@ -84,6 +88,10 @@ export default function ScanPage() {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("Camara no disponible. Usa HTTPS o un navegador compatible.");
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "user",
@@ -118,6 +126,10 @@ export default function ScanPage() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
     }
   };
 
@@ -229,7 +241,7 @@ export default function ScanPage() {
             matchStreakRef.current = 1;
           }
 
-          if (matchStreakRef.current < 2) return;
+          if (matchStreakRef.current < MATCH_STREAK_REQUIRED) return;
 
           registeringRef.current = true;
           intervalRef.current && clearInterval(intervalRef.current);
@@ -279,91 +291,32 @@ export default function ScanPage() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 px-6 py-14 text-slate-100">
-      <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-sky-400/10 blur-3xl" />
+    <ScanLayout
+      title="Verificacion rapida de asistencia"
+      subtitle="Colocate frente a la camara, mantente quieto y espera la confirmacion. El sistema valida tu rostro automaticamente."
+    >
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <ScanCameraCard
+          loading={loading}
+          profesoresReady={profesoresReady}
+          videoRef={videoRef}
+        />
 
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-10">
-        <header className="flex flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-amber-300">
-            Scan facial
-          </p>
-          <h1 className="text-4xl font-semibold text-slate-100 [font-family:'Space_Grotesk',ui-sans-serif]">
-            Verificacion rapida de asistencia
-          </h1>
-          <p className="max-w-2xl text-sm text-slate-300">
-            Colocate frente a la camara, mantente quieto y espera la confirmacion.
-            El sistema valida tu rostro automaticamente.
-          </p>
-        </header>
-
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-950/80 to-slate-900/60 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="flex h-3 w-3 animate-pulse rounded-full bg-emerald-400" />
-                <span className="text-xs text-slate-300">
-                  Camara {loading ? "activa" : "lista"}
-                </span>
-              </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
-                {profesoresReady ? "Profesores listos" : "Cargando profesores"}
-              </span>
-            </div>
-            <div className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60">
-              <video
-                ref={videoRef}
-                className="h-[360px] w-full object-cover -scale-x-100 sm:h-[420px]"
-                playsInline
-                muted
-              />
-            </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-              <span>Iluminacion recomendada: media/alta</span>
-              <span>Distancia ideal: 30-60 cm</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="rounded-[28px] border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Estado</p>
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-300">Escaneo</span>
-                  <span className="font-semibold text-amber-300">
-                    {loading ? "En curso" : "En espera"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-300">Reconocimiento</span>
-                  <span className="font-semibold text-slate-100">Auto</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-300">Tiempo limite</span>
-                  <span className="font-semibold text-slate-100">20s</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/10 bg-slate-950/70 p-6 shadow-xl">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Pasos</p>
-              <ol className="mt-4 space-y-3 text-sm text-slate-300">
-                <li>1. Mira directo a la camara.</li>
-                <li>2. Quita gorras o lentes oscuros.</li>
-                <li>3. Espera la confirmacion.</li>
-              </ol>
-            </div>
-
-            <button
-              className="rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:opacity-60"
-              onClick={handleScan}
-              disabled={loading}
-            >
-              {loading ? "Escaneando..." : "Iniciar escaneo"}
-            </button>
-          </div>
+        <div className="flex flex-col gap-4">
+          <ScanStatusPanel
+            loading={loading}
+            timeoutSeconds={Math.round(SCAN_TIMEOUT_MS / 1000)}
+          />
+          <ScanStepsPanel />
+          <button
+            className="rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:opacity-60"
+            onClick={handleScan}
+            disabled={loading}
+          >
+            {loading ? "Escaneando..." : "Iniciar escaneo"}
+          </button>
         </div>
       </div>
-    </main>
+    </ScanLayout>
   );
 }
