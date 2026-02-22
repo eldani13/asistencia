@@ -114,6 +114,7 @@ export default function ScanPage() {
     scanAttemptsRef.current = 0;
     registeringRef.current = false;
     matchStreakRef.current = 0;
+    setLoading(false);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -157,6 +158,7 @@ export default function ScanPage() {
           title: "No se pudo cargar profesores",
           text: profesoresError,
         });
+        setLoading(false);
         return;
       }
 
@@ -166,6 +168,7 @@ export default function ScanPage() {
           title: "Cargando profesores",
           text: "Espera un momento y vuelve a intentar.",
         });
+        setLoading(false);
         return;
       }
 
@@ -272,8 +275,6 @@ export default function ScanPage() {
         text: message,
       });
       stopCamera();
-    } finally {
-      setLoading(false);
     }
   };
 
