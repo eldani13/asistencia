@@ -152,6 +152,7 @@ export const registerAsistencia = async (profesorId: string) => {
   const now = new Date();
   const fecha = formatDateKey(now);
   const hora = formatTime(now);
+  const nowMinutes = parseTimeToMinutes(hora) ?? 0;
   const docId = `${profesorId}_${fecha}`;
 
   const db = requireDb();
@@ -186,6 +187,13 @@ export const registerAsistencia = async (profesorId: string) => {
     }
 
     if (data.horaEntrada && !data.horaSalida) {
+      const entradaMinutes = parseTimeToMinutes(String(data.horaEntrada)) ?? 0;
+      if (nowMinutes - entradaMinutes < 5) {
+        return {
+          status: "error" as const,
+          message: "Espera 5 minutos antes de registrar la salida.",
+        };
+      }
       transaction.update(ref, {
         horaSalida: hora,
         jornada,
@@ -194,6 +202,9 @@ export const registerAsistencia = async (profesorId: string) => {
     }
 
     if (!data.horaEntrada) {
+      if (data.horaSalida) {
+        return { status: "error" as const, message: "Estado invalido." };
+      }
       transaction.update(ref, {
         horaEntrada: hora,
         jornada,
