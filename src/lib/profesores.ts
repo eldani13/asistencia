@@ -31,11 +31,10 @@ export const listProfesores = async (): Promise<Profesor[]> => {
       nombre: String(data.nombre ?? ""),
       apellido: String(data.apellido ?? ""),
       activo: Boolean(data.activo ?? true),
-      faceDescriptor: (data.faceDescriptor ?? null) as number[] | null,
+      faceDescriptor: data.faceDescriptor ?? undefined,
       jornada: (data.jornada ?? "mañana") as "mañana" | "tarde",
       horaInicio: String(data.horaInicio ?? "06:15"),
       horaFin: String(data.horaFin ?? "14:15"),
-      createdAt: data.createdAt?.toDate?.() ?? null,
     };
   });
 };
@@ -57,11 +56,10 @@ export const subscribeProfesoresActivos = (
           nombre: String(data.nombre ?? ""),
           apellido: String(data.apellido ?? ""),
           activo: Boolean(data.activo ?? true),
-          faceDescriptor: (data.faceDescriptor ?? null) as number[] | null,
+          faceDescriptor: data.faceDescriptor ?? undefined,
           jornada: (data.jornada ?? "mañana") as "mañana" | "tarde",
           horaInicio: String(data.horaInicio ?? "06:15"),
           horaFin: String(data.horaFin ?? "14:15"),
-          createdAt: data.createdAt?.toDate?.() ?? null,
         };
       });
       onChange(items);
@@ -84,11 +82,10 @@ export const subscribeProfesores = (onChange: (items: Profesor[]) => void): Unsu
         nombre: String(data.nombre ?? ""),
         apellido: String(data.apellido ?? ""),
         activo: Boolean(data.activo ?? true),
-        faceDescriptor: (data.faceDescriptor ?? null) as number[] | null,
+        faceDescriptor: data.faceDescriptor ?? undefined,
         jornada: (data.jornada ?? "mañana") as "mañana" | "tarde",
         horaInicio: String(data.horaInicio ?? "06:15"),
         horaFin: String(data.horaFin ?? "14:15"),
-        createdAt: data.createdAt?.toDate?.() ?? null,
       };
     });
     onChange(items);

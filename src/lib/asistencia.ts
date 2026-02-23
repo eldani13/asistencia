@@ -298,8 +298,8 @@ export const subscribeAsistenciasByRange = (
     const items = snapshot.docs.map((docItem) => {
       const data = docItem.data();
       const minutosTrabajados = computeWorkedMinutes(
-        data.horaEntrada ? String(data.horaEntrada) : undefined,
-        data.horaSalida ? String(data.horaSalida) : undefined
+        data.horaEntrada ? String(data.horaEntrada) : null,
+        data.horaSalida ? String(data.horaSalida) : null
       );
       return {
         id: docItem.id,

@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { initializeApp, getApps } from "firebase/app";
 import { getFirebaseAuth, getFirebaseDb } from "./firebase";
-import type { AdminProfile } from "./types";
+import type { AdminProfile } from "@/types/admin/admin-profile";
 
 const requireAuth = () => {
   const auth = getFirebaseAuth();
