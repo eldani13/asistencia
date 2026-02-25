@@ -16,6 +16,7 @@ const MATCH_STREAK_REQUIRED = 1;
 const SCAN_TIMEOUT_MS = 20000;
 
 export default function ScanPage() {
+    const [guideMessage, setGuideMessage] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -134,26 +135,36 @@ export default function ScanPage() {
     }
   };
 
+  const similarityPercentage = (a: number[], b: number[]) => {
+    if (a.length !== b.length) return 0;
+    let matches = 0;
+    const tolerance = 0.15; 
+    for (let i = 0; i < a.length; i++) {
+      if (Math.abs(a[i] - b[i]) < tolerance) matches++;
+    }
+    return matches / a.length;
+  };
+
   const pickBestProfesor = (
     descriptor: Float32Array,
     profesores: Profesor[]
-  ): { profesor: Profesor | null; distance: number; match: boolean } => {
+  ): { profesor: Profesor | null; similarity: number; match: boolean } => {
     let bestProfesor: Profesor | null = null;
-    let bestDistance = Number.POSITIVE_INFINITY;
+    let bestSimilarity = 0;
 
     profesores.forEach((profesor) => {
       if (!profesor.faceDescriptor) return;
-      const current = distance(Array.from(descriptor), profesor.faceDescriptor);
-      if (current < bestDistance) {
-        bestDistance = current;
+      const similarity = similarityPercentage(Array.from(descriptor), profesor.faceDescriptor);
+      if (similarity > bestSimilarity) {
+        bestSimilarity = similarity;
         bestProfesor = profesor;
       }
     });
 
     return {
       profesor: bestProfesor,
-      distance: bestDistance,
-      match: bestDistance <= MATCH_THRESHOLD,
+      similarity: bestSimilarity,
+      match: bestSimilarity >= 0.8,
     };
   };
 
@@ -164,6 +175,25 @@ export default function ScanPage() {
     registeringRef.current = false;
     matchStreakRef.current = 0;
 
+      try {
+        const { getAuth, signInAnonymously } = await import("firebase/auth");
+        const { getFirebaseApp } = await import("@/lib/firebase");
+        const app = getFirebaseApp();
+        if (app) {
+          const auth = getAuth(app);
+          if (!auth.currentUser) {
+            await signInAnonymously(auth);
+          }
+        }
+      } catch (e) {
+        await showAlert({
+          icon: "error",
+          title: "Error de autenticación",
+          text: "No se pudo autenticar el dispositivo.",
+        });
+        setLoading(false);
+        return;
+      }
     try {
       if (profesoresError) {
         await showAlert({
@@ -218,8 +248,10 @@ export default function ScanPage() {
           if (registeringRef.current) return;
 
           const descriptor = await getDescriptorFromVideo(videoRef.current);
+          // Mensajes de guía
           if (!descriptor) {
             scanAttemptsRef.current += 1;
+            setGuideMessage("No se detecta rostro. Alinea tu cara dentro del óvalo, mantente quieto y mejora la iluminación si es posible.");
             if (scanAttemptsRef.current % 4 === 0) {
               showToast({
                 icon: "info",
@@ -229,11 +261,18 @@ export default function ScanPage() {
             return;
           }
 
+          // Ejemplo de detección de distancia (simple)
+          // Si el descriptor existe, podrías estimar la distancia por el tamaño del rostro detectado (no implementado aquí, pero puedes usar faceapi para landmarks)
+          // setGuideMessage("Acércate un poco más a la cámara."); // o "Aléjate un poco más."
+
           const result = pickBestProfesor(descriptor, activos);
           if (!result.match || !result.profesor) {
+            setGuideMessage("No se reconoce el rostro. Intenta mejorar la iluminación, alinear tu cara y mantenerte quieto.");
             matchStreakRef.current = 0;
             return;
           }
+
+          setGuideMessage("¡Rostro reconocido! Espera la confirmación...");
 
           if (lastMatchRef.current === result.profesor.id) {
             matchStreakRef.current += 1;
@@ -249,17 +288,18 @@ export default function ScanPage() {
           intervalRef.current = null;
 
           const response = await registerAsistencia(result.profesor.id);
+          setGuideMessage("");
           if (response.status === "entrada") {
             await showAlert({
               icon: "success",
               title: "Entrada registrada",
-              text: `${result.profesor.nombre} ${result.profesor.apellido}`,
+              text: `${result.profesor.nombre} ${result.profesor.apellido} (Similitud: ${(result.similarity * 100).toFixed(1)}%)`,
             });
           } else if (response.status === "salida") {
             await showAlert({
               icon: "success",
               title: "Salida registrada",
-              text: `${result.profesor.nombre} ${result.profesor.apellido}`,
+              text: `${result.profesor.nombre} ${result.profesor.apellido} (Similitud: ${(result.similarity * 100).toFixed(1)}%)`,
             });
           } else {
             await showAlert({
@@ -271,6 +311,7 @@ export default function ScanPage() {
 
           stopCamera();
         } catch (error) {
+          setGuideMessage("");
           const message = error instanceof Error ? error.message : "Error al detectar";
           await showAlert({
             icon: "error",
@@ -301,6 +342,7 @@ export default function ScanPage() {
           loading={loading}
           profesoresReady={profesoresReady}
           videoRef={videoRef}
+          guideMessage={guideMessage}
         />
 
         <div className="flex flex-col gap-4">
